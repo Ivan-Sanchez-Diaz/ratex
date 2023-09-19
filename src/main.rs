@@ -1,7 +1,51 @@
 use std::slice::Iter;
 
 fn main() {
+    bin_to_hexa("10111010001");
     hex_to_octal("65FE8");
+    //hex_to_octal("789FF");
+    //hex_to_octal("EDF759");
+    //hex_to_octal("FFABCD");
+    //hex_to_octal("125EFA");
+}
+
+pub fn bin_to_hexa(bin: &str) {
+    let mut raw = String::new();
+
+    let vec: Vec<String> = bin
+        .chars()
+        .map(|ch| ch.to_digit(2).unwrap().to_string())
+        .collect();
+
+    let vec: Vec<String> = vec.rchunks(4).rev().map(|c| c.join("")).collect();
+
+    begin_center(&mut raw);
+    write(&mut raw, &format!("binario={}", bin));
+    end_center(&mut raw);
+
+    begin_center(&mut raw);
+    begin_tabular(&mut raw, vec.len());
+    hline(&mut raw);
+
+    add_rows(&mut raw, vec.iter());
+
+    let hex: Vec<u32> = vec
+        .iter()
+        .map(|g| u32::from_str_radix(g, 2).unwrap())
+        .collect();
+
+    let hex: Vec<String> = hex
+        .iter()
+        .map(|n| format!("{:x}", n).to_uppercase())
+        .collect();
+
+    add_rows(&mut raw, hex.iter());
+
+    hline(&mut raw);
+    end_tabular(&mut raw);
+    end_center(&mut raw);
+
+    println!("{}", raw)
 }
 
 pub fn hex_to_decimal(hex: &str) {
@@ -60,26 +104,45 @@ pub fn hex_to_decimal(hex: &str) {
 
 pub fn hex_to_octal(hex: &str) {
     let mut raw = String::new();
+
+    begin_center(&mut raw);
     write(&mut raw, &format!("hexadecimal={}", hex));
+    end_center(&mut raw);
 
     let decimal = u128::from_str_radix(hex, 16).unwrap();
     let mut cociente = decimal;
+
+    let mut count = 0;
+    begin_center(&mut raw);
     loop {
-        raw.push_str(r"\opidiv{");
+        count = count + 1;
+
+        raw.push_str(r"\opidiv[voperation=top]{");
         raw.push_str(&cociente.to_string());
         raw.push_str("}{");
         raw.push_str(&8.to_string());
         raw.push_str("}");
-        raw.push_str(r" \quad");
-        newline(&mut raw);
 
         cociente = cociente / 8;
         if cociente < 8 {
+            newline(&mut raw);
+            end_center(&mut raw);
             break;
+        }
+
+        raw.push_str(r" \quad");
+        newline(&mut raw);
+
+        if count == 3 {
+            count = 0;
+            end_center(&mut raw);
+            begin_center(&mut raw);
         }
     }
 
+    begin_center(&mut raw);
     write(&mut raw, &format!("octal={:o}", decimal));
+    end_center(&mut raw);
 
     println!("{}", raw)
 }
