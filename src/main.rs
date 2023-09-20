@@ -1,12 +1,43 @@
 use std::slice::Iter;
 
 fn main() {
-    bin_to_hexa("10111010001");
-    hex_to_octal("65FE8");
-    //hex_to_octal("789FF");
-    //hex_to_octal("EDF759");
-    //hex_to_octal("FFABCD");
-    //hex_to_octal("125EFA");
+    hex_to_bin("FFABCD");
+    hex_to_bin("DA1256");
+    hex_to_bin("EFA1C2");
+    hex_to_bin("FFFFE");
+}
+
+pub fn hex_to_bin(hex: &str) {
+    let mut raw = String::new();
+
+    write(&mut raw, "\\begin{itemize}");
+    write(&mut raw, "\\centering");
+    write(&mut raw, &format!("\\item hexadecimal={}", hex));
+
+    begin_center(&mut raw);
+    begin_tabular(&mut raw, hex.len());
+    hline(&mut raw);
+
+    let chars: Vec<char> = hex.chars().collect();
+    add_rows(&mut raw, chars.iter());
+
+    let digits: Vec<u32> = hex.chars().map(|c| c.to_digit(16).unwrap()).collect();
+    let digits: Vec<String> = digits.iter().map(|d| format!("{:b}", d)).collect();
+    add_rows(&mut raw, digits.iter());
+
+    hline(&mut raw);
+    end_tabular(&mut raw);
+    end_center(&mut raw);
+
+    begin_center(&mut raw);
+    let value_bin = u128::from_str_radix(hex, 16).unwrap();
+    let value_bin = format!("{:b}", value_bin);
+    write(&mut raw, &format!("binario={}", value_bin));
+    end_center(&mut raw);
+
+    write(&mut raw, "\\end{itemize}");
+
+    println!("{}", raw)
 }
 
 pub fn bin_to_hexa(bin: &str) {
@@ -19,9 +50,9 @@ pub fn bin_to_hexa(bin: &str) {
 
     let vec: Vec<String> = vec.rchunks(4).rev().map(|c| c.join("")).collect();
 
-    begin_center(&mut raw);
-    write(&mut raw, &format!("binario={}", bin));
-    end_center(&mut raw);
+    write(&mut raw, "\\begin{itemize}");
+    write(&mut raw, "\\centering");
+    write(&mut raw, &format!("\\item bin={}", bin));
 
     begin_center(&mut raw);
     begin_tabular(&mut raw, vec.len());
@@ -45,15 +76,23 @@ pub fn bin_to_hexa(bin: &str) {
     end_tabular(&mut raw);
     end_center(&mut raw);
 
+    begin_center(&mut raw);
+    let value_hex = u128::from_str_radix(bin, 2).unwrap();
+    let value_hex = format!("{:x}", value_hex).to_uppercase();
+    write(&mut raw, &format!("hexadecimal={}", value_hex));
+    end_center(&mut raw);
+
+    write(&mut raw, "\\end{itemize}");
+
     println!("{}", raw)
 }
 
 pub fn hex_to_decimal(hex: &str) {
     let mut raw = String::new();
 
-    begin_center(&mut raw);
-    write(&mut raw, &format!("hexadecimal={}", hex));
-    end_center(&mut raw);
+    write(&mut raw, "\\begin{itemize}");
+    write(&mut raw, "\\centering");
+    write(&mut raw, &format!("\\item hexadecimal={}", hex));
 
     begin_center(&mut raw);
     begin_tabular(&mut raw, hex.len());
@@ -99,15 +138,65 @@ pub fn hex_to_decimal(hex: &str) {
     newline(&mut raw);
     end_center(&mut raw);
 
+    write(&mut raw, "\\end{itemize}");
+
+    println!("{}", raw)
+}
+
+pub fn dec_to_hex(dec: &str) {
+    let mut raw = String::new();
+
+    write(&mut raw, "\\begin{itemize}");
+    write(&mut raw, "\\centering");
+    write(&mut raw, &format!("\\item decimal={}", dec));
+
+    let decimal = u128::from_str_radix(dec, 10).unwrap();
+    let mut cociente = decimal;
+
+    let mut count = 0;
+    begin_center(&mut raw);
+    loop {
+        count = count + 1;
+
+        raw.push_str(r"\opidiv[voperation=top,remainderstyle=\color{red}]{");
+        raw.push_str(&cociente.to_string());
+        raw.push_str("}{");
+        raw.push_str(&16.to_string());
+        raw.push_str("}");
+
+        cociente = cociente / 16;
+        if cociente < 16 {
+            newline(&mut raw);
+            end_center(&mut raw);
+            break;
+        }
+
+        raw.push_str(r" \quad");
+        newline(&mut raw);
+
+        if count == 3 {
+            count = 0;
+            end_center(&mut raw);
+            begin_center(&mut raw);
+        }
+    }
+
+    begin_center(&mut raw);
+    let decimal_value = format!("{:x}", decimal).to_uppercase();
+    write(&mut raw, &format!("hexadecimal={}", decimal_value));
+    end_center(&mut raw);
+
+    write(&mut raw, "\\end{itemize}");
+
     println!("{}", raw)
 }
 
 pub fn hex_to_octal(hex: &str) {
     let mut raw = String::new();
 
-    begin_center(&mut raw);
-    write(&mut raw, &format!("hexadecimal={}", hex));
-    end_center(&mut raw);
+    write(&mut raw, "\\begin{itemize}");
+    write(&mut raw, "\\centering");
+    write(&mut raw, &format!("\\item hexadecimal={}", hex));
 
     let decimal = u128::from_str_radix(hex, 16).unwrap();
     let mut cociente = decimal;
@@ -117,7 +206,7 @@ pub fn hex_to_octal(hex: &str) {
     loop {
         count = count + 1;
 
-        raw.push_str(r"\opidiv[voperation=top]{");
+        raw.push_str(r"\opidiv[voperation=top,remainderstyle=\color{red}]{");
         raw.push_str(&cociente.to_string());
         raw.push_str("}{");
         raw.push_str(&8.to_string());
@@ -143,6 +232,8 @@ pub fn hex_to_octal(hex: &str) {
     begin_center(&mut raw);
     write(&mut raw, &format!("octal={:o}", decimal));
     end_center(&mut raw);
+
+    write(&mut raw, "\\end{itemize}");
 
     println!("{}", raw)
 }
